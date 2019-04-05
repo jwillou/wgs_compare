@@ -1,0 +1,41 @@
+#!/bin/bash
+
+#PBS -N comp_mum
+#PBS -q beagle
+#PBS -l nodes=1:ppn=1,naccesspolicy=singleuser
+#PBS -l walltime=336:00:00
+#PBS -e compare10.sterror
+#PBS -o compare10.stout
+#PBS -m abe
+#PBS -M jwillou@purdue.edu
+
+cd /scratch/snyder/j/jwillou/wgs/compare #$PBS_O_WORKDIR
+
+module load MUMmer/3.23
+
+cat compare10.txt | while IFS=$'\t' read -r sp1 sp2 class
+	do
+	dirname="${sp1}_${sp2}"
+	mkdir -p -- "$dirname"
+	cd $dirname
+	
+	#run mummer, ref=sp1, query=sp2
+	nucmer --mum --maxgap=500 --mincluster=100 --prefix=sp1_sp2 "../../data/${sp1}/genome.fa" "../../data/${sp2}/genome.fa"
+	show-coords -r sp1_sp2.delta > sp1_sp2.coords
+	show-aligns sp1_sp2.delta refname qryname > sp1_sp2.aligns
+	delta-filter -q -r sp1_sp2.delta > sp1_sp2.delta.filter
+	
+	#run mummer, ref=sp2, query=sp1
+	nucmer --mum --maxgap=500 --mincluster=100 --prefix=sp2_sp1 "../../data/${sp2}/genome.fa" "../../data/${sp1}/genome.fa"
+	show-coords -r sp2_sp1.delta > sp2_sp1.coords
+	show-aligns sp2_sp1.delta refname qryname > sp2_sp1.aligns
+	delta-filter -q -r sp2_sp1.delta > sp2_sp1.delta.filter
+	
+	cd ../
+done
+
+####mummer basics####
+#nucmer --maxgap=500 --mincluster=100 --prefix=ref_qry ../data/Amphiprion_ocellaris/genome.fa ../data/Amphiprion_percula/genome.fa
+#show-coords -r ref_qry.delta > ref_qry.coords
+#show-aligns ref_qry.delta refname qryname > ref_qry.aligns
+#delta-filter -q -r ref_qry.delta > ref_qry.filter

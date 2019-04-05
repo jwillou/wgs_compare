@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#PBS -N download
+#PBS -q beagle
+#PBS -l nodes=1:ppn=1,naccesspolicy=singleuser
+#PBS -l walltime=336:00:00
+#PBS -e download.sterror
+#PBS -o download.stout
+#PBS -m abe
+#PBS -M jwillou@purdue.edu
+
+cd /scratch/snyder/j/jwillou/wgs/data #$PBS_O_WORKDIR
+
+ncbi="ncbi.txt"
+cat genomes_list.txt | while IFS=$'\t' read -r name dna gff link mtlink
+	do
+	mkdir $name
+	cd $name
+	wget $dna -O genome.fa.gz
+	wget $gff -O genome.gff.gz 
+	gunzip genome.fa.gz
+	gunzip genome.gff.gz
+	printf "%s" "$link" > "$ncbi"
+	printf "%s" "$mtlink" >> "$ncbi"
+	cd ../
+done

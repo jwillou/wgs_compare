@@ -1,0 +1,28 @@
+#!/bin/bash
+
+#PBS -N compare
+#PBS -q beagle
+#PBS -l nodes=1:ppn=1,naccesspolicy=singleuser
+#PBS -l walltime=336:00:00
+#PBS -e compare.sterror
+#PBS -o compare.stout
+#PBS -m abe
+#PBS -M jwillou@purdue.edu
+
+cd /scratch/snyder/j/jwillou/wgs/data #$PBS_O_WORKDIR
+mkdir ../compare/
+
+#divide into groups
+split -n l/10 compare.txt
+
+#set easier names
+mv xaa ../compare/compare1.txt
+mv xab ../compare/compare2.txt
+mv xac ../compare/compare3.txt
+mv xad ../compare/compare4.txt
+mv xae ../compare/compare5.txt
+mv xaf ../compare/compare6.txt
+mv xag ../compare/compare7.txt
+mv xah ../compare/compare8.txt
+mv xai ../compare/compare9.txt
+mv xaj ../compare/compare10.txt
