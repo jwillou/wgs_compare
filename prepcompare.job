@@ -13,7 +13,7 @@ cd /scratch/snyder/j/jwillou/wgs/data #$PBS_O_WORKDIR
 mkdir ../compare/
 
 #divide into groups
-split -n l/10 compare.txt
+split -n l/20 notcomplete.txt
 
 #set easier names
 mv xaa ../compare/compare1.txt
@@ -26,3 +26,13 @@ mv xag ../compare/compare7.txt
 mv xah ../compare/compare8.txt
 mv xai ../compare/compare9.txt
 mv xaj ../compare/compare10.txt
+mv xak  ../compare/compare11.txt
+mv xal  ../compare/compare12.txt
+mv xam  ../compare/compare13.txt
+mv xan  ../compare/compare14.txt
+mv xao  ../compare/compare15.txt
+mv xap  ../compare/compare16.txt
+mv xaq  ../compare/compare17.txt
+mv xar  ../compare/compare18.txt
+mv xas  ../compare/compare19.txt
+mv xat  ../compare/compare20.txt
