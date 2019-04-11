@@ -1,0 +1,106 @@
+#!/bin/sh -l
+
+#PBS -N comp_start
+#PBS -q fnrgenetics
+#PBS -l nodes=1:ppn=1,naccesspolicy=singleuser
+#PBS -l walltime=336:00:00
+#PBS -e compare_mummer4.sterror
+#PBS -o compare_mummer4.stout
+
+cd /scratch/snyder/j/jwillou/wgs/compare #$PBS_O_WORKDIR
+
+#create submission files
+count=0
+cat compare.txt | while IFS=$'\t' read -r sp1 sp2 class
+	do
+	count=$((count+1))
+	printf '#!/bin/bash\n' > "mum${count}".job
+	printf "#PBS -N comp_mum\n" >> "mum${count}".job
+	printf "#PBS -q fnrgenetics\n" >> "mum${count}".job
+	printf "#PBS -l nodes=1:ppn=10,naccesspolicy=singleuser\n" >> "mum${count}".job
+	printf "#PBS -l walltime=4:00:00\n" >> "mum${count}".job
+	printf "#PBS -e ${sp1}_${sp2}/${sp1}_${sp2}.sterror\n" >> "mum${count}".job
+	printf "#PBS -o ${sp1}_${sp2}/${sp1}_${sp2}.stout\n" >> "mum${count}".job
+	printf "\n" >> "mum${count}".job
+	printf "module load MUMmer/4\n" >> "mum${count}".job
+	printf "cd /scratch/snyder/j/jwillou/wgs/compare\n" >> "mum${count}".job
+	printf "\n" >> "mum${count}".job
+	printf "mkdir -p -- ${sp1}_${sp2}\n" >> "mum${count}".job
+	printf "cd ${sp1}_${sp2}\n" >> "mum${count}".job
+	printf "\n" >> "mum${count}".job
+	printf "nucmer --maxmatch --prefix=sp1_sp2 -t 10 "../../data/${sp1}/genome_format.fa" "../../data/${sp2}/genome_format.fa" &>> log.txt\n" >> "mum${count}".job
+	printf "show-coords -r sp1_sp2.delta > sp1_sp2.coords\n" >> "mum${count}".job
+	printf "show-aligns sp1_sp2.delta refname qryname > sp1_sp2.aligns\n" >> "mum${count}".job
+	printf "delta-filter -q -r sp1_sp2.delta > sp1_sp2.delta.filter\n" >> "mum${count}".job
+	printf "echo "${sp1}_${sp2}" >> ../mum4log.txt\n" >> "mum${count}".job
+	printf "cat log.txt >> ../mum4log.txt\n" >> "mum${count}".job
+done
+
+#change permissions
+chmod u+x mum*
+
+#get list of files
+ls mum* > mum.txt
+
+#submit list
+printf '#!/bin/bash\n' > joblist.job
+printf "#PBS -N joblist\n" >> joblist.job
+printf "#PBS -q fnrgenetics\n" >> joblist.job
+printf "#PBS -l nodes=1:ppn=1,naccesspolicy=singleuser\n" >> joblist.job
+printf "#PBS -l walltime=336:00:00\n" >> joblist.job
+printf "#PBS -e jlist.sterror\n" >> joblist.job
+printf "#PBS -o jlist.stout\n" >> joblist.job
+printf "cd /scratch/snyder/j/jwillou/wgs/compare\n" >> joblist.job
+cat mum.txt | while IFS= read -r LINE
+do
+	printf "qsub ${LINE}\n" >> joblist.job	
+done
+chmod u+x joblist.job
+qsub joblist.job
+wait
+
+#clean up
+#rm mum.txt
+#mkdir files_mummer
+#mv mum* files_mummer
+#mv joblist.job files_mummer
+#mv jlist* files_mummer
+
+# Usage: nucmer [options] ref:path qry:path+
+# 
+# nucmer generates nucleotide alignments between two mutli-FASTA input
+# files. The out.delta output file lists the distance between insertions
+# and deletions that produce maximal scoring alignments between each
+# sequence. The show-* utilities know how to read this format.
+# 
+# By default, nucmer uses anchor matches that are unique in the
+# reference but not necessarily unique in the query. See --mum and
+# --maxmatch for different bevahiors.
+# 
+# Options (default value in (), *required):
+#      --mum                                Use anchor matches that are unique in both the reference and query (false)
+#      --maxmatch                           Use all anchor matches regardless of their uniqueness (false)
+#  -b, --breaklen=uint32                    Set the distance an alignment extension will attempt to extend poor scoring regions before giving up (200)
+#  -c, --mincluster=uint32                  Sets the minimum length of a cluster of matches (65)
+#  -D, --diagdiff=uint32                    Set the maximum diagonal difference between two adjacent anchors in a cluster (5)
+#  -d, --diagfactor=double                  Set the maximum diagonal difference between two adjacent anchors in a cluster as a differential fraction of the gap length (0.12)
+#      --noextend                           Do not perform cluster extension step (false)
+#  -f, --forward                            Use only the forward strand of the Query sequences (false)
+#  -g, --maxgap=uint32                      Set the maximum gap between two adjacent matches in a cluster (90)
+#  -l, --minmatch=uint32                    Set the minimum length of a single exact match (20)
+#  -L, --minalign=uint32                    Minimum length of an alignment, after clustering and extension (0)
+#      --nooptimize                         No alignment score optimization, i.e. if an alignment extension reaches the end of a sequence, it will not backtrack to optimize the alignment score and instead terminate the alignment at the end of the sequence (false)
+#  -r, --reverse                            Use only the reverse complement of the Query sequences (false)
+#      --nosimplify                         Don't simplify alignments by removing shadowed clusters. Use this option when aligning a sequence to itself to look for repeats (false)
+#  -p, --prefix=PREFIX                      Write output to PREFIX.delta (out)
+#      --delta=PATH                         Output delta file to PATH (instead of PREFIX.delta)
+#      --sam-short=PATH                     Output SAM file to PATH, short format
+#      --sam-long=PATH                      Output SAM file to PATH, long format
+#      --save=PREFIX                        Save suffix array to files starting with PREFIX
+#      --load=PREFIX                        Load suffix array from file starting with PREFIX
+#      --batch=BASES                        Proceed by batch of chunks of BASES from the reference
+#  -t, --threads=NUM                        Use NUM threads (# of cores)
+#  -U, --usage                              Usage
+#  -h, --help                               This message
+#      --full-help                          Detailed help
+#  -V, --version                            Version
