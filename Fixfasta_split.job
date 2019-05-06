@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#PBS -N fixfasta
+#PBS -q darwin
+#PBS -l nodes=1:ppn=2,naccesspolicy=singleuser
+#PBS -l walltime=336:00:00
+#PBS -m abe
+#PBS -M jwillou@purdue.edu
+
+cd /scratch/snyder/j/jwillou/wgs/data #$PBS_O_WORKDIR
+
+cat specieslist.txt | while IFS= read -r LINE
+	do
+	cd $LINE
+	perl ../../wgs_compare/fastasplit.pl
+	wait
+	cd ../
+done

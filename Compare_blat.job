@@ -1,0 +1,166 @@
+#!/bin/sh -l
+
+#PBS -N comp_start
+#PBS -q fnrquail
+#PBS -l nodes=1:ppn=1,naccesspolicy=singleuser
+#PBS -l walltime=336:00:00
+#PBS -e compare_mummer4.sterror
+#PBS -o compare_mummer4.stout
+
+cd /scratch/snyder/j/jwillou/wgs/compare/blat #$PBS_O_WORKDIR
+
+#create submission files
+count=0
+cat compare.txt | while IFS=$'\t' read -r sp1 sp2 class
+	do
+	count=$((count+1))
+	printf '#!/bin/bash\n' > "blat${count}".job
+	printf "#PBS -N comp_blat\n" >> "blat${count}".job
+	printf "#PBS -q fnrquail\n" >> "blat${count}".job
+	printf "#PBS -l nodes=1:ppn=2,naccesspolicy=singleuser\n" >> "blat${count}".job
+	printf "#PBS -l walltime=336:00:00\n" >> "blat${count}".job
+	printf "#PBS -e ${sp1}_${sp2}/${sp1}_${sp2}.sterror\n" >> "blat${count}".job
+	printf "#PBS -o ${sp1}_${sp2}/${sp1}_${sp2}.stout\n" >> "blat${count}".job
+	printf "\n" >> "blat${count}".job
+	printf "module load blat/35\n" >> "blat${count}".job
+	printf "module load parallel/20180222\n" >> "blat${count}".job
+	printf "cd /scratch/snyder/j/jwillou/wgs/compare/blat\n" >> "blat${count}".job
+	printf "\n" >> "blat${count}".job
+	printf "mkdir -p -- ${sp1}_${sp2}\n" >> "blat${count}".job
+	printf "cd ${sp1}_${sp2}\n" >> "blat${count}".job
+	printf "\n" >> "blat${count}".job
+	printf "blat ../../../data/${sp1}/genome_format_unmask.fa ../../../data/${sp2}/genome_format_unmask.fa -t=dnax -q=dnax -ooc=11.ooc -oneOff=1 -makeOoc=11.ooc -trimHardA -out=pslx output.pslx &>> log.txt	\n" >> "blat${count}".job
+	printf "cat ../../../data/${sp2}/genome_format_unmask.fa | parallel --round-robin --pipe --recstart --tmpdir '>' 'blat ../../../data/${sp1}/genome_format_unmask.fa stdin -t=dnax -q=dnax -ooc=11.ooc -oneOff=1 -trimHardA -out=pslx >(cat) >&2' > output.pslx  &>> log.txt \n" >> "blat${count}".job
+	#cat ../../data/Hipposideros_armiger/genome_format_unmask.fa | parallel --round-robin --pipe --recstart --tmpdir '>' 'blat ../../data/Hipposideros_galeritus/genome_format_unmask.fa stdin -t=dnax -q=dnax -ooc=11.ooc -oneOff=1 -trimHardA -out=pslx >(cat) >&2' > output.pslx
+	#blat ../../data/Hipposideros_armiger/genome_format_unmask.fa ../../data/Hipposideros_galeritus/genome_format_unmask.fa -t=dnax -q=dnax -ooc=11.ooc -oneOff=1 -makeOoc=11.ooc -trimHardA -out=pslx output.pslx	
+	#blat ../../data/Hipposideros_armiger/genome_format_unmask.fa ../../data/Hipposideros_galeritus/genome_format_unmask.fa -t=dnax -q=dnax -ooc=11.ooc -oneOff=1 -trimHardA -out=pslx output.pslx
+	#Hipposideros_armiger_Hipposideros_galeritus
+	#printf "show-coords -r sp1_sp2.delta > sp1_sp2.coords\n" >> "blat${count}".job
+	#printf "show-aligns sp1_sp2.delta refname qryname > sp1_sp2.aligns\n" >> "blat${count}".job
+	#printf "delta-filter -q -r sp1_sp2.delta > sp1_sp2.delta.filter\n" >> "blat${count}".job
+	printf "echo "${sp1}_${sp2}" >> ../blatlog.txt\n" >> "blat${count}".job
+	printf "cat log.txt >> ../blatlog.txt\n" >> "blat${count}".job
+done
+
+#change permissions
+chmod u+x blat*
+
+#get list of files
+ls blat* > blat.txt
+
+#submit list
+printf '#!/bin/bash\n' > joblist.job
+printf "#PBS -N joblist\n" >> joblist.job
+printf "#PBS -q fnrquail\n" >> joblist.job
+printf "#PBS -l nodes=1:ppn=1,naccesspolicy=singleuser\n" >> joblist.job
+printf "#PBS -l walltime=336:00:00\n" >> joblist.job
+printf "#PBS -e jlist.sterror\n" >> joblist.job
+printf "#PBS -o jlist.stout\n" >> joblist.job
+printf "cd /scratch/snyder/j/jwillou/wgs/compare/blat\n" >> joblist.job
+cat blat.txt | while IFS= read -r LINE
+do
+	printf "qsub ${LINE}\n" >> joblist.job	
+done
+chmod u+x joblist.job
+qsub joblist.job
+
+#clean up
+# rm blat.txt
+# mkdir files_blat
+# mv blat* files_blat
+# mv joblist.job files_blat
+# mv jlist* files_blat
+
+##########
+# blat - Standalone BLAT v. 35 fast sequence search command line tool
+# usage:
+#    blat database query [-ooc=11.ooc] output.psl
+# where:
+#    database and query are each either a .fa , .nib or .2bit file,
+#    or a list these files one file name per line.
+#    -ooc=11.ooc tells the program to load over-occurring 11-mers from
+#                and external file.  This will increase the speed
+#                by a factor of 40 in many cases, but is not required
+#    output.psl is where to put the output.
+#    Subranges of nib and .2bit files may specified using the syntax:
+#       /path/file.nib:seqid:start-end
+#    or
+#       /path/file.2bit:seqid:start-end
+#    or
+#       /path/file.nib:start-end
+#    With the second form, a sequence id of file:start-end will be used.
+# options:
+#    -t=type     Database type.  Type is one of:
+#                  dna - DNA sequence
+#                  prot - protein sequence
+#                  dnax - DNA sequence translated in six frames to protein
+#                The default is dna
+#    -q=type     Query type.  Type is one of:
+#                  dna - DNA sequence
+#                  rna - RNA sequence
+#                  prot - protein sequence
+#                  dnax - DNA sequence translated in six frames to protein
+#                  rnax - DNA sequence translated in three frames to protein
+#                The default is dna
+#    -prot       Synonymous with -t=prot -q=prot
+#    -ooc=N.ooc  Use overused tile file N.ooc.  N should correspond to
+#                the tileSize
+#    -tileSize=N sets the size of match that triggers an alignment.
+#                Usually between 8 and 12
+#                Default is 11 for DNA and 5 for protein.
+#    -stepSize=N spacing between tiles. Default is tileSize.
+#    -oneOff=N   If set to 1 this allows one mismatch in tile and still
+#                triggers an alignments.  Default is 0.
+#    -minMatch=N sets the number of tile matches.  Usually set from 2 to 4
+#                Default is 2 for nucleotide, 1 for protein.
+#    -minScore=N sets minimum score.  This is the matches minus the
+#                mismatches minus some sort of gap penalty.  Default is 30
+#    -minIdentity=N Sets minimum sequence identity (in percent).  Default is
+#                90 for nucleotide searches, 25 for protein or translated
+#                protein searches.
+#    -maxGap=N   sets the size of maximum gap between tiles in a clump.  Usually
+#                set from 0 to 3.  Default is 2. Only relevent for minMatch > 1.
+#    -noHead     suppress .psl header (so it's just a tab-separated file)
+#    -makeOoc=N.ooc Make overused tile file. Target needs to be complete genome.
+#    -repMatch=N sets the number of repetitions of a tile allowed before
+#                it is marked as overused.  Typically this is 256 for tileSize
+#                12, 1024 for tile size 11, 4096 for tile size 10.
+#                Default is 1024.  Typically only comes into play with makeOoc.
+#                Also affected by stepSize. When stepSize is halved repMatch is
+#                doubled to compensate.
+#    -mask=type  Mask out repeats.  Alignments won't be started in masked region
+#                but may extend through it in nucleotide searches.  Masked areas
+#                are ignored entirely in protein or translated searches. Types are
+#                  lower - mask out lower cased sequence
+#                  upper - mask out upper cased sequence
+#                  out   - mask according to database.out RepeatMasker .out file
+#                  file.out - mask database according to RepeatMasker file.out
+#    -qMask=type Mask out repeats in query sequence.  Similar to -mask above but
+#                for query rather than target sequence.
+#    -repeats=type Type is same as mask types above.  Repeat bases will not be
+#                masked in any way, but matches in repeat areas will be reported
+#                separately from matches in other areas in the psl output.
+#    -minRepDivergence=NN - minimum percent divergence of repeats to allow
+#                them to be unmasked.  Default is 15.  Only relevant for
+#                masking using RepeatMasker .out files.
+#    -dots=N     Output dot every N sequences to show program's progress
+#    -trimT      Trim leading poly-T
+#    -noTrimA    Don't trim trailing poly-A
+#    -trimHardA  Remove poly-A tail from qSize as well as alignments in
+#                psl output
+#    -fastMap    Run for fast DNA/DNA remapping - not allowing introns,
+#                requiring high %ID. Query sizes must not exceed 5000.
+#    -out=type   Controls output file format.  Type is one of:
+#                    psl - Default.  Tab separated format, no sequence
+#                    pslx - Tab separated format with sequence
+#                    axt - blastz-associated axt format
+#                    maf - multiz-associated maf format
+#                    sim4 - similar to sim4 format
+#                    wublast - similar to wublast format
+#                    blast - similar to NCBI blast format
+#                    blast8- NCBI blast tabular format
+#                    blast9 - NCBI blast tabular format with comments
+#    -fine       For high quality mRNAs look harder for small initial and
+#                terminal exons.  Not recommended for ESTs
+#    -maxIntron=N  Sets maximum intron size. Default is 750000
+#    -extendThroughN - Allows extension of alignment through large blocks of N's

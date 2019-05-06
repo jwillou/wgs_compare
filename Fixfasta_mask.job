@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#PBS -N fixfasta
+#PBS -q standby
+#PBS -l nodes=1:ppn=5,naccesspolicy=singleuser
+#PBS -l walltime=4:00:00
+#PBS -m abe
+#PBS -M jwillou@purdue.edu
+
+cd /scratch/snyder/j/jwillou/wgs/data #$PBS_O_WORKDIR
+
+cat ../wgs_compare/specieslist.txt | while IFS= read -r LINE
+	do
+	cd $LINE
+	awk 'BEGIN{FS=" "}{if(!/>/){print toupper($0)}else{print $1}}' genome_format.fa > genome_format_unmask.fa
+	wait
+	cd ../
+done
