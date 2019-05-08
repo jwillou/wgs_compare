@@ -45,7 +45,7 @@ Lacerta	bilineata	Lacerta_bilineata
 Lacerta	viridis	Lacerta_viridis
 Macaca	fascicularis	Macaca_fascicularis
 Macaca	mulatta	Macaca_mulatta
-Macaca	nemestri	Macaca_nemestri
+Macaca	nemestrinia	Macaca_nemestrinia
 Macropus	fuliginosus	Macropus_fuliginosus
 Macropus	giganteus	Macropus_giganteus
 Macropus	rufus	Macropus_rufus
