@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#PBS -N fixfasta
+#PBS -q beagle
+#PBS -l nodes=1:ppn=5,naccesspolicy=singleuser
+#PBS -l walltime=336:00:00
+#PBS -m abe
+#PBS -M jwillou@purdue.edu
+
+cd /scratch/snyder/j/jwillou/wgs/mtdata #$PBS_O_WORKDIR
+
+cat ../wgs_compare/mtspecieslist.txt | while IFS= read -r LINE
+	do
+	LINE="${LINE%\\r}"
+	cd /scratch/snyder/j/jwillou/wgs/mtdata/${LINE}
+	perl ../../wgs_compare/convert_fastamulti_mt.pl
+	wait
+	cd ../
+done
