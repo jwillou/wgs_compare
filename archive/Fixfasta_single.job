@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#PBS -N fix
+#PBS -q darwin
+#PBS -l nodes=1:ppn=1,naccesspolicy=singleuser
+#PBS -l walltime=336:00:00
+#PBS -m abe
+#PBS -M jwillou@purdue.edu
+
+cd /scratch/snyder/j/jwillou/wgs/data/Macropus_fuliginosus
+
+mv DNA212.FINAL.fasta genome.fa
+
+perl convert_fastamulti.pl
+awk 'BEGIN{FS=" "}{if(!/>/){print toupper($0)}else{print $1}}' genome_format.fa > genome_format_unmask.fa

@@ -19,7 +19,7 @@ Apteryx_haastii
 Apteryx_owenii
 Apteryx_rowi
 Balaenoptera_acutorostrata
-Balaenoptera_boerensis
+Balaenoptera_bonaerensis
 Calidris_pugnax
 Calidris_pygmaea
 Camelus_bactrianus

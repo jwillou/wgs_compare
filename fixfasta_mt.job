@@ -14,6 +14,7 @@ cat ../wgs_compare/mtspecieslist.txt | while IFS= read -r LINE
 	LINE="${LINE%\\r}"
 	cd /scratch/snyder/j/jwillou/wgs/mtdata/${LINE}
 	perl ../../wgs_compare/convert_fastamulti_mt.pl
+	awk 'BEGIN{FS=" "}{if(!/>/){print toupper($0)}else{print $1}}' sequence.fasta.txt > sequence.fasta_unmask.fa
 	wait
 	cd ../
 done
