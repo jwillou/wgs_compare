@@ -1,0 +1,20 @@
+#!/bin/bash 
+
+#PBS -N DNAdiv  
+#PBS -q fnrsnake
+#PBS -l nodes=1:ppn=14,naccesspolicy=singleuser
+#PBS -l walltime=336:00:00
+#PBS -m abe 
+#PBS -M jwillou@purdue.edu
+#PBS -e sterr.txt
+#PBS -o stout.txt
+
+ 
+cd $PBS_O_WORKDIR
+
+#module load R-bioconductor/3.5.1
+module load  R/3.5.1
+
+cd /scratch/snyder/j/jwillou/wgs/compare/divergence
+
+Rscript calc_div.R
