@@ -1,0 +1,81 @@
+#!/bin/sh -l
+
+#PBS -N comp_start
+#PBS -q fnrsnake
+#PBS -l nodes=1:ppn=1,naccesspolicy=singleuser
+#PBS -l walltime=336:00:00
+#PBS -e compare_blast.sterror
+#PBS -o compare_blast.stout
+
+cd /scratch/snyder/j/jwillou/wgs/compare/blast_21 #$PBS_O_WORKDIR
+
+#create submission files
+
+#fnrfish
+count=0
+cat specieslist.txt | while IFS=$'\t' read -r sp1
+	do
+	count=$((count+1))
+	printf '#!/bin/bash\n' > "rm${count}".job
+	printf "#PBS -N te_${sp1}\n" >> "rm${count}".job
+	printf "#PBS -q fnrdewoody\n" >> "rm${count}".job
+	printf "#PBS -l nodes=1:ppn=1,naccesspolicy=singleuser\n" >> "rm${count}".job
+	printf "#PBS -l walltime=336:00:00\n" >> "rm${count}".job
+	printf "#PBS -e ${sp1}/${sp1}.sterror\n" >> "rm${count}".job
+	printf "#PBS -o ${sp1}/${sp1}.stout\n" >> "rm${count}".job
+	printf "\n" >> "rm${count}".job
+	printf "cd /scratch/snyder/j/jwillou/wgs/te\n" >> "rm${count}".job
+	printf "\n" >> "rm${count}".job
+	printf "module load bioinfo\n" >> "rm${count}".job
+	printf "module load perl \n" >> "rm${count}".job
+	printf "module load RepeatMasker/4.0.7 #/group/bioinfo/apps/apps/RepeatMasker-4.0.7\n" >> "rm${count}".job
+	printf "module load RECON/1.08 #/group/bioinfo/apps/apps/RECON-1.08/bin\n" >> "rm${count}".job
+	printf "module load RepeatScout/1.0.5 #/group/bioinfo/apps/apps/RepeatScout-1.0.5\n" >> "rm${count}".job
+	printf "module load nseg/1995-09-28 #/group/bioinfo/apps/apps/nseg-1995-09-28\n" >> "rm${count}".job
+	printf "module load trf/4.04 #/group/bioinfo/apps/apps/trf-4.04\n" >> "rm${count}".job
+	printf "module load rmblast/2.2.28 #/group/bioinfo/apps/apps/blast-2.6.0+/bin\n" >> "rm${count}".job
+	printf "\n" >> "rm${count}".job
+	printf "mkdir -p -- ${sp1}\n" >> "rm${count}".job
+	printf "cd ${sp1}\n" >> "rm${count}".job
+	printf "\n" >> "rm${count}".job
+	printf "#node version did not make library properly so installed separately\n" >> "rm${count}".job
+	printf "/scratch/snyder/j/jwillou/wgs/te/RepeatModeler-open-1.0.11/BuildDatabase -name ${sp1} -engine ncbi ../../data/${sp1}/genome_format_unmask.fa\n" >> "rm${count}".job
+	printf "/scratch/snyder/j/jwillou/wgs/te/RepeatModeler-open-1.0.11/RepeatModeler -pa 5 -engine ncbi -database ${sp1}\n" >> "rm${count}".job
+	printf "mv RM_* RMtemp\n" >> "rm${count}".job
+	printf "\n" >> "rm${count}".job
+	printf "#find repeats\n" >> "rm${count}".job
+	printf "RepeatMasker -pa 20 -e ncbi -lib RMtemp/consensi.fa.classified ../../data/${sp1}/genome_format_unmask.fa -dir /scratch/snyder/j/jwillou/wgs/te/${sp1}/rm_out\n" >> "rm${count}".job
+	printf "\n" >> "rm${count}".job
+	printf "#process and generate usable table output\n" >> "rm${count}".job
+	printf "gunzip rm_out/genome_format_unmask.fa.cat.gz\n" >> "rm${count}".job
+	printf "ProcessRepeats rm_out/genome_format_unmask.fa.cat\n" >> "rm${count}".job
+done
+
+#change permissions
+chmod u+x rm*
+
+#get list of files
+ls rm* > rm.txt 
+
+#submit list
+printf '#!/bin/bash\n' > joblist.job
+printf "#PBS -N joblist\n" >> joblist.job
+printf "#PBS -q fnrdewoody\n" >> joblist.job
+printf "#PBS -l nodes=1:ppn=1,naccesspolicy=singleuser\n" >> joblist.job
+printf "#PBS -l walltime=336:00:00\n" >> joblist.job
+printf "#PBS -e jlist.sterror\n" >> joblist.job
+printf "#PBS -o jlist.stout\n" >> joblist.job
+printf "cd /scratch/snyder/j/jwillou/wgs/te\n" >> joblist.job
+cat rm.txt | while IFS= read -r LINE
+do
+	printf "qsub ${LINE}\n" >> joblist.job	
+done
+chmod u+x joblist.job
+qsub joblist.job 
+
+#clean up
+# rm rm.txt
+# mkdir files_rm
+# mv rm* files_rm
+# mv joblist.job files_rm
+# mv jlist* files_rm
