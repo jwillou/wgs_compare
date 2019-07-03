@@ -1,23 +1,23 @@
 #!/bin/sh -l
 
 #PBS -N comp_start
-#PBS -q fnrsnake
+#PBS -q fnrgenetics
 #PBS -l nodes=1:ppn=1,naccesspolicy=singleuser
 #PBS -l walltime=336:00:00
 #PBS -e compare_blast.sterror
 #PBS -o compare_blast.stout
 
-cd /scratch/snyder/j/jwillou/wgs/compare/blast_21 #$PBS_O_WORKDIR
+cd /scratch/snyder/j/jwillou/wgs/compare/te #$PBS_O_WORKDIR
 
 #create submission files
 count=0
-cat specieslist.txt | while IFS=$'\t' read -r sp1
+cat specieslist_remain.txt | while IFS=$'\t' read -r sp1
 	do
 	count=$((count+1))
 	printf '#!/bin/bash\n' > "rm${count}".job
 	printf "#PBS -N te_${sp1}\n" >> "rm${count}".job
-	printf "#PBS -q fnrdewoody\n" >> "rm${count}".job
-	printf "#PBS -l nodes=1:ppn=1,naccesspolicy=singleuser\n" >> "rm${count}".job
+	printf "#PBS -q fnrwhale\n" >> "rm${count}".job
+	printf "#PBS -l nodes=1:ppn=5,naccesspolicy=singleuser\n" >> "rm${count}".job
 	printf "#PBS -l walltime=336:00:00\n" >> "rm${count}".job
 	printf "#PBS -e ${sp1}/${sp1}.sterror\n" >> "rm${count}".job
 	printf "#PBS -o ${sp1}/${sp1}.stout\n" >> "rm${count}".job
@@ -38,16 +38,25 @@ cat specieslist.txt | while IFS=$'\t' read -r sp1
 	printf "\n" >> "rm${count}".job
 	printf "#node version did not make library properly so installed separately\n" >> "rm${count}".job
 	printf "/scratch/snyder/j/jwillou/wgs/te/RepeatModeler-open-1.0.11/BuildDatabase -name ${sp1} -engine ncbi ../../data/${sp1}/genome_format_unmask.fa\n" >> "rm${count}".job
-	printf "/scratch/snyder/j/jwillou/wgs/te/RepeatModeler-open-1.0.11/RepeatModeler -pa 5 -engine ncbi -database ${sp1}\n" >> "rm${count}".job
-	printf "mv RM_* RMtemp\n" >> "rm${count}".job
+	printf "/scratch/snyder/j/jwillou/wgs/te/RepeatModeler-open-1.0.11/RepeatModeler -pa 20 -engine ncbi -database ${sp1}\n" >> "rm${count}".job
 	printf "\n" >> "rm${count}".job
 	printf "#find repeats\n" >> "rm${count}".job
-	printf "RepeatMasker -pa 20 -e ncbi -lib RMtemp/consensi.fa.classified ../../data/${sp1}/genome_format_unmask.fa -dir /scratch/snyder/j/jwillou/wgs/te/${sp1}/rm_out\n" >> "rm${count}".job
+	printf "RepeatMasker -pa 20 -e ncbi -lib RM_*/consensi.fa.classified ../../data/${sp1}/genome_format_unmask.fa -dir /scratch/snyder/j/jwillou/wgs/te/${sp1}\n" >> "rm${count}".job
 	printf "\n" >> "rm${count}".job
 	printf "#process and generate usable table output\n" >> "rm${count}".job
-	printf "gunzip rm_out/genome_format_unmask.fa.cat.gz\n" >> "rm${count}".job
-	printf "ProcessRepeats rm_out/genome_format_unmask.fa.cat\n" >> "rm${count}".job
-	printf "/bin/rm -r RMtemp/\n" >> "rm${count}".job
+	printf "gunzip genome_format_unmask.fa.cat.gz\n" >> "rm${count}".job
+	printf "ProcessRepeats genome_format_unmask.fa.cat\n" >> "rm${count}".job
+	printf "mv RM_*/round1/consensi.fa ./consensi.fa1\n" >> "rm${count}".job
+	printf "mv RM_*/round1/sampleDB-1.fa ./sampleDB-1.fa\n" >> "rm${count}".job
+	printf "mv RM_*/round2/consensi.fa ./consensi.fa2\n" >> "rm${count}".job
+	printf "mv RM_*/round2/sampleDB-2.fa ./sampleDB-2.fa\n" >> "rm${count}".job
+	printf "mv RM_*/round3/consensi.fa ./consensi.fa3\n" >> "rm${count}".job
+	printf "mv RM_*/round3/sampleDB-3.fa ./sampleDB-3.fa\n" >> "rm${count}".job
+	printf "mv RM_*/round4/consensi.fa ./consensi.fa4\n" >> "rm${count}".job
+	printf "mv RM_*/round4/sampleDB-4.fa ./sampleDB-4.fa\n" >> "rm${count}".job
+	printf "mv RM_*/round5/consensi.fa ./consensi.fa5\n" >> "rm${count}".job
+	printf "mv RM_*/round5/sampleDB-5.fa ./sampleDB-5.fa\n" >> "rm${count}".job
+	printf "/bin/rm -r RM_*/\n" >> "rm${count}".job
 done
 
 #change permissions
