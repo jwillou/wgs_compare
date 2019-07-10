@@ -11,7 +11,7 @@ cd /scratch/snyder/j/jwillou/wgs/compare/te #$PBS_O_WORKDIR
 
 #create submission files
 count=0
-cat specieslist_remain.txt | while IFS=$'\t' read -r sp1
+cat specieslist.txt | while IFS=$'\t' read -r sp1
 	do
 	count=$((count+1))
 	printf '#!/bin/bash\n' > "rm${count}".job
