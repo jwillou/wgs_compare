@@ -1,7 +1,7 @@
 #!/bin/sh -l
 
 #PBS -N comp_start
-#PBS -q fnrsnake
+#PBS -q fnrdewoody
 #PBS -l nodes=1:ppn=1,naccesspolicy=singleuser
 #PBS -l walltime=336:00:00
 #PBS -e compare_blast.sterror
@@ -10,10 +10,8 @@
 cd /scratch/snyder/j/jwillou/wgs/compare/blast_21 #$PBS_O_WORKDIR
 
 #create submission files
-
-#fnrfish
 count=0
-cat compare_fish.txt | while IFS=$'\t' read -r sp1 sp2 class
+cat compare.txt | while IFS=$'\t' read -r sp1 sp2 class
 	do
 	count=$((count+1))
 	printf '#!/bin/bash\n' > "blast${count}".job
@@ -34,56 +32,6 @@ cat compare_fish.txt | while IFS=$'\t' read -r sp1 sp2 class
 	printf "makeblastdb -in ../../../data/${sp1}/genome_format_unmask.fa -dbtype nucl\n" >> "blast${count}".job	
 	printf "blastn -query ../../../data/${sp2}/genome_format_unmask_1000.fa -db ../../../data/${sp1}/genome_format_unmask.fa -out outblast21.txt -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore nident mismatch gapopen gaps qseq sseq' -perc_identity 3 -qcov_hsp_perc 3 -culling_limit 1 -max_target_seqs 1 -evalue 10 -num_threads 10\n" >> "blast${count}".job
 	printf "echo "${sp1}_${sp2}" >> ../fnrfish.txt\n" >> "blast${count}".job
-done
-
-#fnrsnake
-count=50
-cat compare_snake.txt | while IFS=$'\t' read -r sp1 sp2 class
-	do
-	count=$((count+1))
-	printf '#!/bin/bash\n' > "blast${count}".job
-	printf "#PBS -N comp_${sp1}_${sp2}\n" >> "blast${count}".job
-	printf "#PBS -q fnrsnake\n" >> "blast${count}".job
-	printf "#PBS -l nodes=1:ppn=2,naccesspolicy=singleuser\n" >> "blast${count}".job
-	printf "#PBS -l walltime=336:00:00\n" >> "blast${count}".job
-	printf "#PBS -e ${sp1}_${sp2}/${sp1}_${sp2}.sterror\n" >> "blast${count}".job
-	printf "#PBS -o ${sp1}_${sp2}/${sp1}_${sp2}.stout\n" >> "blast${count}".job
-	printf "\n" >> "blast${count}".job
-	printf "cd /scratch/snyder/j/jwillou/wgs/compare/blast_21\n" >> "blast${count}".job
-	printf "module load blast/2.9.0+\n" >> "blast${count}".job
-	printf "\n" >> "blast${count}".job
-	printf "mkdir -p -- ${sp1}_${sp2}\n" >> "blast${count}".job
-	printf "cd ${sp1}_${sp2}\n" >> "blast${count}".job
-	printf "\n" >> "blast${count}".job
-	printf "perl ../../../wgs_compare/fastasplit_chunks1000.pl ../../../data/${sp2}/genome_format_unmask.fa > ../../../data/${sp2}/genome_format_unmask_1000.fa\n" >> "blast${count}".job
-	printf "makeblastdb -in ../../../data/${sp1}/genome_format_unmask.fa -dbtype nucl\n" >> "blast${count}".job	
-	printf "blastn -query ../../../data/${sp2}/genome_format_unmask_1000.fa -db ../../../data/${sp1}/genome_format_unmask.fa -out outblast21.txt -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore nident mismatch gapopen gaps qseq sseq' -perc_identity 3 -qcov_hsp_perc 3 -culling_limit 1 -max_target_seqs 1 -evalue 10 -num_threads 10\n" >> "blast${count}".job
-	printf "echo "${sp1}_${sp2}" >> ../fnrsnake.txt\n" >> "blast${count}".job
-done
-
-#fnrbeagle
-count=100
-cat compare_beagle.txt | while IFS=$'\t' read -r sp1 sp2 class
-	do
-	count=$((count+1))
-	printf '#!/bin/bash\n' > "blast${count}".job
-	printf "#PBS -N comp_${sp1}_${sp2}\n" >> "blast${count}".job
-	printf "#PBS -q beagle\n" >> "blast${count}".job
-	printf "#PBS -l nodes=1:ppn=2,naccesspolicy=singleuser\n" >> "blast${count}".job
-	printf "#PBS -l walltime=336:00:00\n" >> "blast${count}".job
-	printf "#PBS -e ${sp1}_${sp2}/${sp1}_${sp2}.sterror\n" >> "blast${count}".job
-	printf "#PBS -o ${sp1}_${sp2}/${sp1}_${sp2}.stout\n" >> "blast${count}".job
-	printf "\n" >> "blast${count}".job
-	printf "cd /scratch/snyder/j/jwillou/wgs/compare/blast_21\n" >> "blast${count}".job
-	printf "module load blast/2.9.0+\n" >> "blast${count}".job
-	printf "\n" >> "blast${count}".job
-	printf "mkdir -p -- ${sp1}_${sp2}\n" >> "blast${count}".job
-	printf "cd ${sp1}_${sp2}\n" >> "blast${count}".job
-	printf "\n" >> "blast${count}".job
-	printf "perl ../../../wgs_compare/fastasplit_chunks1000.pl ../../../data/${sp2}/genome_format_unmask.fa > ../../../data/${sp2}/genome_format_unmask_1000.fa\n" >> "blast${count}".job
-	printf "makeblastdb -in ../../../data/${sp1}/genome_format_unmask.fa -dbtype nucl\n" >> "blast${count}".job	
-	printf "blastn -query ../../../data/${sp2}/genome_format_unmask_1000.fa -db ../../../data/${sp1}/genome_format_unmask.fa -out outblast21.txt -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore nident mismatch gapopen gaps qseq sseq' -perc_identity 3 -qcov_hsp_perc 3 -culling_limit 1 -max_target_seqs 1 -evalue 10 -num_threads 10\n" >> "blast${count}".job
-	printf "echo "${sp1}_${sp2}" >> ../beagle.txt\n" >> "blast${count}".job
 done
 
 #change permissions
